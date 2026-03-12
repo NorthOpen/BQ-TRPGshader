@@ -368,8 +368,8 @@ h1 {
 <div class="main-grid">
 <div class="sidebar">
 <div id="upload">
-<label for="file">选择文档或拖拽文档至此处<br>*DOCX</label>
-<input type="file" id="file" accept=".docx">
+<label for="file">选择文档或拖拽文档至此处<br>*DOCX / DOC / TXT / MD</label>
+<input type="file" id="file" accept=".docx,.doc,.txt,.md">
 </div>
 <div id="characters">
 <div class="char-title">角色名称着色器</div>
@@ -464,9 +464,13 @@ uploadArea.ondrop = (e) => {
   e.preventDefault();
   uploadArea.classList.remove('dragover');
   const files = e.dataTransfer.files;
-  if (files.length > 0 && files[0].name.endsWith('.docx')) {
-    fileInput.files = files;
-    processFile(files[0]);
+  if (files.length > 0) {
+    const file = files[0];
+    const validExts = ['.docx', '.doc', '.txt', '.md'];
+    if (validExts.some(ext => file.name.toLowerCase().endsWith(ext))) {
+      fileInput.files = files;
+      processFile(file);
+    }
   }
 };
 
@@ -475,37 +479,80 @@ fileInput.onchange = (e) => {
 };
 
 async function processFile(file) {
-  const zip = await JSZip.loadAsync(file);
-  const xml = await zip.file('word/document.xml').async('string');
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'text/xml');
+  const fileName = file.name.toLowerCase();
+  let text = '';
 
-  const paragraphs = doc.querySelectorAll('w\\:p, p');
+  if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+    text = await file.text();
+  } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+    const zip = await JSZip.loadAsync(file);
+    const xml = await zip.file('word/document.xml').async('string');
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+    const paragraphs = doc.querySelectorAll('w\\:p, p');
+    const lines = [];
+    paragraphs.forEach(p => {
+      const runs = p.querySelectorAll('w\\:r, r');
+      let line = '';
+      runs.forEach(r => {
+        const textNode = r.querySelector('w\\:t, t');
+        if (textNode) line += textNode.textContent;
+      });
+      if (line.trim()) lines.push(line);
+    });
+    text = lines.join('\n');
+  }
+
+  parseText(text);
+}
+
+function parseText(text) {
+  // 处理HTML实体转义
+  text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+  const lines = text.split('\n');
   const blocks = [];
   let currentBlock = null;
 
-  paragraphs.forEach(p => {
-    const runs = p.querySelectorAll('w\\:r, r');
-    let text = '', color = '#2a2520';
-    runs.forEach(r => {
-      const colorNode = r.querySelector('w\\:color, color');
-      if (colorNode) color = '#' + (colorNode.getAttribute('w:val') || colorNode.getAttribute('val'));
-      const textNode = r.querySelector('w\\:t, t');
-      if (textNode) text += textNode.textContent;
-    });
+  lines.forEach(line => {
+    line = line.trim();
+    if (!line) return;
 
-    if (!text.trim()) return;
-    const speakerMatch = text.match(/^<(.+?)>:\s*(.*)/);
+    // 清除[CQ:]格式的QQ消息
+    if (line.includes('[CQ:')) return;
 
-    if (speakerMatch) {
-      currentBlock = { speaker: speakerMatch[1], texts: [], color };
-      if (speakerMatch[2]) currentBlock.texts.push(speakerMatch[2]);
+    // 清除场外发言（开头带括号）
+    if (line.startsWith('(') || line.startsWith('（')) return;
+
+    // 跳过时间戳和Bot消息
+    if (line.includes('<Bot>')) return;
+
+    // 匹配原始LOG格式: 角色名(QQ号) 时间戳
+    const logMatch = line.match(/^(.+?)\(\d+\)\s+\d{4}-\d{2}-\d{2}/);
+    if (logMatch) {
+      const speaker = logMatch[1].trim();
+      currentBlock = { speaker, texts: [], color: '#2a2520' };
       blocks.push(currentBlock);
-    } else if (text.match(/^<(.+?)>$/)) {
-      currentBlock = { speaker: text, texts: [], color };
+      return;
+    }
+
+    // 匹配 <角色名>: 或 <角色名> 格式
+    const speakerMatch1 = line.match(/^<(.+?)>:\s*(.*)/);
+    const speakerMatch2 = line.match(/^<(.+?)>\s+(.*)/);
+
+    if (speakerMatch1) {
+      currentBlock = { speaker: speakerMatch1[1], texts: [], color: '#2a2520' };
+      if (speakerMatch1[2]) currentBlock.texts.push(speakerMatch1[2]);
+      blocks.push(currentBlock);
+    } else if (speakerMatch2) {
+      currentBlock = { speaker: speakerMatch2[1], texts: [], color: '#2a2520' };
+      if (speakerMatch2[2]) currentBlock.texts.push(speakerMatch2[2]);
+      blocks.push(currentBlock);
+    } else if (line.match(/^<(.+?)>$/)) {
+      currentBlock = { speaker: line, texts: [], color: '#2a2520' };
       blocks.push(currentBlock);
     } else if (currentBlock) {
-      currentBlock.texts.push(text);
+      currentBlock.texts.push(line);
     }
   });
 
@@ -513,7 +560,7 @@ async function processFile(file) {
   characterColors = {};
   blocks.forEach(block => {
     if (!characterColors[block.speaker]) {
-      characterColors[block.speaker] = block.color;
+      characterColors[block.speaker] = '#2a2520';
     }
   });
 
