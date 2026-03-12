@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>半阙_排印间</title>
+<style>
+@import url("https://fontsapi.zeoseven.com/7/main/result.css");
+@import url("https://fontsapi.zeoseven.com/332/main/result.css");
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "Zhuque Fangsong (technical preview)", "EB Garamond", serif;
+  background: #f9f6f0;
+  color: #2a2520;
+  overflow-x: hidden;
+}
+
+.container { max-width: 100%; margin: 0; padding: 0; }
+
+header {
+  border-bottom: 3px solid #2a2520;
+  padding: 30px 40px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 30px;
+  background: rgba(249, 246, 240, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.title-group { display: flex; align-items: baseline; gap: 20px; }
+h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.subtitle {
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: #8b5a2b;
+  letter-spacing: 0.1em;
+}
+
+#guide-btn {
+  background: transparent;
+  color: #8b5a2b;
+  border: 2px solid #8b5a2b;
+  padding: 14px 28px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+#guide-btn:hover { background: #8b5a2b; color: #f9f6f0; }
+
+.signature {
+  font-size: 0.9rem;
+  color: transparent;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  cursor: default;
+  position: relative;
+}
+.signature:hover {
+  color: #8b5a2b;
+}
+.signature::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #8b5a2b;
+  transition: width 0.3s ease;
+}
+.signature:hover::after {
+  width: 100%;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  min-height: calc(100vh - 150px);
+}
+
+.sidebar {
+  border-right: 3px solid #2a2520;
+  padding: 40px;
+  background: rgba(139, 90, 43, 0.05);
+}
+
+#upload {
+  border: 3px dashed #8b5a2b;
+  padding: 40px 20px;
+  text-align: center;
+  background: rgba(249, 246, 240, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#upload:hover { background: rgba(139, 90, 43, 0.1); }
+#upload input { display: none; }
+#upload label {
+  cursor: pointer;
+  display: block;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #8b5a2b;
+  letter-spacing: 0.05em;
+}
+
+#characters {
+  margin-top: 30px;
+  padding: 20px;
+  border: 2px solid #8b5a2b;
+  background: rgba(249, 246, 240, 0.8);
+}
+
+.char-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  letter-spacing: 0.05em;
+  color: #8b5a2b;
+}
+
+.char-item {
+  display: grid;
+  grid-template-columns: 30px 1fr 50px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: rgba(139, 90, 43, 0.05);
+}
+
+.char-toggle {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.char-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 2px 4px;
+  color: inherit;
+  width: 100%;
+}
+.char-name:focus {
+  outline: none;
+  border-bottom-color: #8b5a2b;
+}
+
+.char-color {
+  width: 50px;
+  height: 35px;
+  border: 2px solid #2a2520;
+  cursor: pointer;
+}
+
+.export-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+#export-pdf, #export-png {
+  padding: 14px;
+  background: transparent;
+  color: #8b5a2b;
+  border: 2px solid #8b5a2b;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+#export-pdf:hover, #export-png:hover { background: rgba(139, 90, 43, 0.1); }
+#export-pdf.active, #export-png.active {
+  background: #8b5a2b;
+  color: #f9f6f0;
+}
+
+#pdf-menu, #png-menu {
+  margin-top: 10px;
+  padding: 15px;
+  border: 2px solid #8b5a2b;
+  background: rgba(249, 246, 240, 0.9);
+  display: none;
+}
+
+#pdf-menu label, #png-menu label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #8b5a2b;
+  font-weight: 600;
+}
+
+#pdf-menu input, #png-menu input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #8b5a2b;
+  background: #fff;
+  color: #2a2520;
+  font-family: inherit;
+}
+
+#pdf-menu button, #png-menu button {
+  width: 100%;
+  padding: 10px;
+  background: #8b5a2b;
+  color: #f9f6f0;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+#pdf-menu button:hover, #png-menu button:hover { background: #6d4621; }
+
+.content-area {
+  padding: 40px;
+  background: rgba(249, 246, 240, 0.6);
+}
+
+#content {
+  background: transparent;
+  padding: 50px;
+  line-height: 2;
+}
+
+.dialogue {
+  margin: 35px 0;
+  padding: 25px;
+  border-left: 5px solid #8b5a2b;
+  background: rgba(139, 90, 43, 0.08);
+}
+
+.speaker {
+  font-weight: 800;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.text {
+  font-size: 1.05rem;
+  padding-left: 48px;
+  color: #3a3530;
+}
+
+#back-to-top {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 60px;
+  height: 60px;
+  background: #8b5a2b;
+  color: #f9f6f0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.5rem;
+  opacity: 0;
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s ease;
+  z-index: 50;
+}
+#back-to-top.show { opacity: 1; visibility: visible; }
+#back-to-top:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(139, 90, 43, 0.3); }
+
+#guide-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(42, 37, 32, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+#guide-modal.show { opacity: 1; visibility: visible; }
+
+.modal-content {
+  background: #f9f6f0;
+  border: 3px solid #2a2520;
+  padding: 40px;
+  max-width: 600px;
+  width: 90%;
+  position: relative;
+  transform: translateY(-20px);
+  transition: transform 0.3s ease;
+}
+#guide-modal.show .modal-content { transform: translateY(0); }
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #2a2520;
+  transition: all 0.3s ease;
+  line-height: 1;
+}
+.modal-close:hover { transform: rotate(90deg); }
+
+.modal-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  color: #8b5a2b;
+}
+
+.modal-text {
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.modal-text h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 20px 0 10px;
+  color: #8b5a2b;
+}
+
+.modal-text p {
+  margin-bottom: 15px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div class="title-group">
+<h1>半阙</h1>
+<span class="subtitle">排印间</span>
+</div>
+<span class="signature">KkkkitaA with Claude Code</span>
+<button id="guide-btn">使用指南</button>
+</header>
+<div class="main-grid">
+<div class="sidebar">
+<div id="upload">
+<label for="file">选择文档<br>DOCX</label>
+<input type="file" id="file" accept=".docx">
+</div>
+<div id="characters">
+<div class="char-title">角色名称着色器</div>
+<div id="char-list"></div>
+</div>
+<div class="export-buttons">
+<button id="export-pdf">导出PDF</button>
+<button id="export-png">导出PNG</button>
+</div>
+<div id="pdf-menu">
+<label>文件名称：</label>
+<input type="text" id="pdf-filename" value="半阙_排印间" placeholder="输入文件名">
+<button id="confirm-pdf">确认导出</button>
+</div>
+<div id="png-menu">
+<label>文件名称：</label>
+<input type="text" id="png-filename" value="半阙_排印间" placeholder="输入文件名">
+<label>每张图片包含文字块数量：</label>
+<input type="number" id="blocks-per-image" value="10" min="1">
+<button id="confirm-png">确认导出</button>
+</div>
+</div>
+<div class="content-area">
+<div id="content"></div>
+</div>
+</div>
+</div>
+<button id="back-to-top">↑</button>
+<div id="guide-modal">
+<div class="modal-content">
+<button class="modal-close">×</button>
+<h2 class="modal-title">使用指南</h2>
+<div class="modal-text">
+<h3>上传文档</h3>
+<p>点击左侧"选择文档"按钮，上传包含对话内容的.docx文件。文档中的角色对话需使用&lt;角色名&gt;:格式标注。</p>
+<h3>编辑角色</h3>
+<p>在"角色名称着色器"中，可以直接点击角色名称进行修改，点击颜色块更换文字颜色。所有修改会实时反映在右侧内容区。</p>
+<h3>导出内容</h3>
+<p>支持导出为PDF或PNG长图。点击"导出PNG"可自定义文件名称，并设置每张图片包含的文字块数量，适合分段分享。</p>
+<h3>阅读模式</h3>
+<p>滚动页面超过一半时，右下角会出现快速返回顶部按钮。</p>
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+const backToTop = document.getElementById('back-to-top');
+window.onscroll = () => {
+  if (window.scrollY > window.innerHeight / 2) {
+    backToTop.classList.add('show');
+  } else {
+    backToTop.classList.remove('show');
+  }
+};
+backToTop.onclick = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const guideModal = document.getElementById('guide-modal');
+document.getElementById('guide-btn').onclick = () => {
+  guideModal.classList.add('show');
+};
+document.querySelector('.modal-close').onclick = () => {
+  guideModal.classList.remove('show');
+};
+guideModal.onclick = (e) => {
+  if (e.target === guideModal) guideModal.classList.remove('show');
+};
+
+let characterColors = {};
+let characterNames = {};
+let characterVisible = {};
+
+function renderCharacters() {
+  const list = document.getElementById('char-list');
+  list.innerHTML = '';
+  Object.keys(characterColors).forEach(name => {
+    const item = document.createElement('div');
+    item.className = 'char-item';
+    const isVisible = characterVisible[name] !== false;
+    item.innerHTML = `
+      <input type="checkbox" class="char-toggle" ${isVisible ? 'checked' : ''} data-name="${name}">
+      <input type="text" class="char-name" value="${characterNames[name] || name}" data-original="${name}">
+      <input type="color" class="char-color" value="${characterColors[name]}" data-name="${name}">
+    `;
+    list.appendChild(item);
+  });
+
+  document.querySelectorAll('.char-toggle').forEach(input => {
+    input.onchange = (e) => {
+      characterVisible[e.target.dataset.name] = e.target.checked;
+      renderContent();
+    };
+  });
+
+  document.querySelectorAll('.char-name').forEach(input => {
+    input.onchange = (e) => {
+      const original = e.target.dataset.original;
+      characterNames[original] = e.target.value;
+      renderContent();
+    };
+  });
+
+  document.querySelectorAll('.char-color').forEach(input => {
+    input.onchange = (e) => {
+      characterColors[e.target.dataset.name] = e.target.value;
+      renderContent();
+    };
+  });
+}
+
+let contentBlocks = [];
+
+function renderContent() {
+  let html = '';
+  contentBlocks.forEach(block => {
+    if (characterVisible[block.speaker] === false) return;
+    const color = characterColors[block.speaker] || block.color;
+    const displayName = characterNames[block.speaker] || block.speaker;
+    html += `<div class="dialogue"><div class="speaker" style="color:${color}">${displayName}</div>`;
+    block.texts.forEach(t => {
+      html += `<div class="text" style="color:${color}">${t}</div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('content').innerHTML = html;
+}
+
+document.getElementById('file').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const zip = await JSZip.loadAsync(file);
+  const xml = await zip.file('word/document.xml').async('string');
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'text/xml');
+
+  const paragraphs = doc.querySelectorAll('w\\:p, p');
+  const blocks = [];
+  let currentBlock = null;
+
+  paragraphs.forEach(p => {
+    const runs = p.querySelectorAll('w\\:r, r');
+    let text = '', color = '#2a2520';
+    runs.forEach(r => {
+      const colorNode = r.querySelector('w\\:color, color');
+      if (colorNode) color = '#' + (colorNode.getAttribute('w:val') || colorNode.getAttribute('val'));
+      const textNode = r.querySelector('w\\:t, t');
+      if (textNode) text += textNode.textContent;
+    });
+
+    if (!text.trim()) return;
+    const speakerMatch = text.match(/^<(.+?)>:\s*(.*)/);
+
+    if (speakerMatch) {
+      currentBlock = { speaker: speakerMatch[1], texts: [], color };
+      if (speakerMatch[2]) currentBlock.texts.push(speakerMatch[2]);
+      blocks.push(currentBlock);
+    } else if (text.match(/^<(.+?)>$/)) {
+      currentBlock = { speaker: text, texts: [], color };
+      blocks.push(currentBlock);
+    } else if (currentBlock) {
+      currentBlock.texts.push(text);
+    }
+  });
+
+  contentBlocks = blocks;
+  characterColors = {};
+  blocks.forEach(block => {
+    if (!characterColors[block.speaker]) {
+      characterColors[block.speaker] = block.color;
+    }
+  });
+
+  renderCharacters();
+  renderContent();
+});
+
+document.getElementById('export-pdf').onclick = () => {
+  const pdfMenu = document.getElementById('pdf-menu');
+  const pngMenu = document.getElementById('png-menu');
+  const pdfBtn = document.getElementById('export-pdf');
+  const pngBtn = document.getElementById('export-png');
+
+  if (pdfMenu.style.display === 'block') {
+    pdfMenu.style.display = 'none';
+    pdfBtn.classList.remove('active');
+  } else {
+    pdfMenu.style.display = 'block';
+    pngMenu.style.display = 'none';
+    pdfBtn.classList.add('active');
+    pngBtn.classList.remove('active');
+  }
+};
+
+document.getElementById('confirm-pdf').onclick = async () => {
+  const filename = document.getElementById('pdf-filename').value || '半阙_排印间';
+
+  const pdfContainer = document.createElement('div');
+  pdfContainer.style.cssText = `
+    position: absolute;
+    left: -9999px;
+    width: 1400px;
+    background: #f9f6f0;
+    padding: 80px 120px;
+    font-family: "Zhuque Fangsong (technical preview)", "EB Garamond", serif;
+  `;
+
+  contentBlocks.forEach((block) => {
+    const color = characterColors[block.speaker] || block.color;
+    const displayName = characterNames[block.speaker] || block.speaker;
+
+    const dialogue = document.createElement('div');
+    dialogue.style.cssText = 'margin:35px 0;padding:25px;border-left:5px solid #8b5a2b;background:rgba(139,90,43,0.08);';
+
+    const speaker = document.createElement('div');
+    speaker.style.cssText = `font-weight:800;font-size:1.3rem;margin-bottom:15px;color:${color};text-transform:uppercase;`;
+    speaker.textContent = displayName;
+    dialogue.appendChild(speaker);
+
+    block.texts.forEach(t => {
+      const text = document.createElement('div');
+      text.style.cssText = `font-size:1.05rem;padding-left:48px;color:${color};line-height:2;max-width:1100px;`;
+      text.textContent = t;
+      dialogue.appendChild(text);
+    });
+
+    pdfContainer.appendChild(dialogue);
+  });
+
+  document.body.appendChild(pdfContainer);
+
+  const canvas = await html2canvas(pdfContainer, { scale: 2, backgroundColor: '#f9f6f0' });
+  document.body.removeChild(pdfContainer);
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1920, 1080] });
+
+  const pageWidth = 1920;
+  const pageHeight = 1080;
+  const imgHeight = (canvas.height * pageWidth) / canvas.width;
+  const totalPages = Math.ceil(imgHeight / pageHeight);
+
+  for (let i = 0; i < totalPages; i++) {
+    if (i > 0) pdf.addPage();
+
+    const sourceY = (i * canvas.height) / totalPages;
+    const sourceHeight = canvas.height / totalPages;
+
+    const pageCanvas = document.createElement('canvas');
+    pageCanvas.width = canvas.width;
+    pageCanvas.height = sourceHeight;
+    const ctx = pageCanvas.getContext('2d');
+    ctx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+
+    const pageImg = pageCanvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(pageImg, 'JPEG', 0, 0, pageWidth, pageHeight);
+
+    pdf.setFontSize(24);
+    pdf.setTextColor(139, 90, 43);
+    pdf.text(`${i + 1}`, pageWidth - 60, pageHeight - 30, { align: 'right' });
+  }
+
+  pdf.save(`${filename}.pdf`);
+};
+
+document.getElementById('export-png').onclick = () => {
+  const pdfMenu = document.getElementById('pdf-menu');
+  const pngMenu = document.getElementById('png-menu');
+  const pdfBtn = document.getElementById('export-pdf');
+  const pngBtn = document.getElementById('export-png');
+
+  if (pngMenu.style.display === 'block') {
+    pngMenu.style.display = 'none';
+    pngBtn.classList.remove('active');
+  } else {
+    pngMenu.style.display = 'block';
+    pdfMenu.style.display = 'none';
+    pngBtn.classList.add('active');
+    pdfBtn.classList.remove('active');
+  }
+};
+
+document.getElementById('confirm-png').onclick = async () => {
+  const filename = document.getElementById('png-filename').value || '半阙_排印间';
+  const blocksPerImage = parseInt(document.getElementById('blocks-per-image').value);
+  const dialogues = document.querySelectorAll('.dialogue');
+  const total = dialogues.length;
+
+  for (let i = 0; i < total; i += blocksPerImage) {
+    const container = document.createElement('div');
+    container.style.cssText = 'background:#fff;padding:50px;line-height:2;width:800px;';
+
+    for (let j = i; j < Math.min(i + blocksPerImage, total); j++) {
+      container.appendChild(dialogues[j].cloneNode(true));
+    }
+
+    document.body.appendChild(container);
+    const canvas = await html2canvas(container, { scale: 2 });
+    const link = document.createElement('a');
+    link.download = `${filename}_${Math.floor(i / blocksPerImage) + 1}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+    document.body.removeChild(container);
+  }
+};
+</script>
+</body>
+</html>
