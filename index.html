@@ -62,8 +62,9 @@ h1 {
   color: transparent;
   letter-spacing: 0.05em;
   transition: all 0.3s ease;
-  cursor: default;
+  cursor: pointer;
   position: relative;
+  text-decoration: none;
 }
 .signature:hover {
   color: #8b5a2b;
@@ -103,6 +104,10 @@ h1 {
   transition: all 0.2s;
 }
 #upload:hover { background: rgba(139, 90, 43, 0.1); }
+#upload.dragover {
+  background: rgba(139, 90, 43, 0.15);
+  border-color: #6d4621;
+}
 #upload input { display: none; }
 #upload label {
   cursor: pointer;
@@ -357,13 +362,13 @@ h1 {
 <h1>半阙</h1>
 <span class="subtitle">排印间</span>
 </div>
-<span class="signature">KkkkitaA with Claude Code</span>
+<a href="https://github.com/NorthOpen/BQ-TRPGshader" target="_blank" class="signature">KkkkitaA with Claude Code</a>
 <button id="guide-btn">使用指南</button>
 </header>
 <div class="main-grid">
 <div class="sidebar">
 <div id="upload">
-<label for="file">选择文档<br>DOCX</label>
+<label for="file">选择文档或拖拽文档至此处<br>*DOCX</label>
 <input type="file" id="file" accept=".docx">
 </div>
 <div id="characters">
@@ -399,7 +404,8 @@ h1 {
 <h2 class="modal-title">使用指南</h2>
 <div class="modal-text">
 <h3>上传文档</h3>
-<p>点击左侧"选择文档"按钮，上传包含对话内容的.docx文件。文档中的角色对话需使用&lt;角色名&gt;:格式标注。</p>
+<p>使用"选择文档"按钮或直接拖拽文件到上传区域，上传包含对话内容的.docx文件。文档中的角色对话需使用&lt;角色名&gt;:格式标注。与海豹着色器可以实现无缝对接，如若使用其他DICE服务，请先使用海豹着色器进行重着色。</p>
+<p>网址：<a href="https://log.weizaima.com/" target="_blank" style="color:#8b5a2b;text-decoration:underline;">https://log.weizaima.com/</a></p>
 <h3>编辑角色</h3>
 <p>在"角色名称着色器"中，可以直接点击角色名称进行修改，点击颜色块更换文字颜色。所有修改会实时反映在右侧内容区。</p>
 <h3>导出内容</h3>
@@ -439,6 +445,81 @@ guideModal.onclick = (e) => {
 let characterColors = {};
 let characterNames = {};
 let characterVisible = {};
+
+const uploadArea = document.getElementById('upload');
+const fileInput = document.getElementById('file');
+
+uploadArea.onclick = () => fileInput.click();
+
+uploadArea.ondragover = (e) => {
+  e.preventDefault();
+  uploadArea.classList.add('dragover');
+};
+
+uploadArea.ondragleave = () => {
+  uploadArea.classList.remove('dragover');
+};
+
+uploadArea.ondrop = (e) => {
+  e.preventDefault();
+  uploadArea.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files.length > 0 && files[0].name.endsWith('.docx')) {
+    fileInput.files = files;
+    processFile(files[0]);
+  }
+};
+
+fileInput.onchange = (e) => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+};
+
+async function processFile(file) {
+  const zip = await JSZip.loadAsync(file);
+  const xml = await zip.file('word/document.xml').async('string');
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'text/xml');
+
+  const paragraphs = doc.querySelectorAll('w\\:p, p');
+  const blocks = [];
+  let currentBlock = null;
+
+  paragraphs.forEach(p => {
+    const runs = p.querySelectorAll('w\\:r, r');
+    let text = '', color = '#2a2520';
+    runs.forEach(r => {
+      const colorNode = r.querySelector('w\\:color, color');
+      if (colorNode) color = '#' + (colorNode.getAttribute('w:val') || colorNode.getAttribute('val'));
+      const textNode = r.querySelector('w\\:t, t');
+      if (textNode) text += textNode.textContent;
+    });
+
+    if (!text.trim()) return;
+    const speakerMatch = text.match(/^<(.+?)>:\s*(.*)/);
+
+    if (speakerMatch) {
+      currentBlock = { speaker: speakerMatch[1], texts: [], color };
+      if (speakerMatch[2]) currentBlock.texts.push(speakerMatch[2]);
+      blocks.push(currentBlock);
+    } else if (text.match(/^<(.+?)>$/)) {
+      currentBlock = { speaker: text, texts: [], color };
+      blocks.push(currentBlock);
+    } else if (currentBlock) {
+      currentBlock.texts.push(text);
+    }
+  });
+
+  contentBlocks = blocks;
+  characterColors = {};
+  blocks.forEach(block => {
+    if (!characterColors[block.speaker]) {
+      characterColors[block.speaker] = block.color;
+    }
+  });
+
+  renderCharacters();
+  renderContent();
+}
 
 function renderCharacters() {
   const list = document.getElementById('char-list');
